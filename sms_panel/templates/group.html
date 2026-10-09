@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block main %}
+<p><a href="/grupy">← Wszystkie grupy</a></p>
+<h1>Grupa: {{ g.name }} <small>({{ members|length }} {{ 'osoba' if members|length == 1 else 'osób' }})</small></h1>
+
+<div class="card row">
+  <form method="post" action="/grupy/{{ g.id }}/nazwa" class="row grow">
+    <label for="nazwa-grupy"><b>Nazwa:</b></label>
+    <input name="name" id="nazwa-grupy" value="{{ g.name }}" required>
+    <button class="btn">Zmień nazwę</button>
+  </form>
+  <a class="btn primary" href="/wysylka?grupa={{ g.id }}">Napisz do grupy</a>
+  <a class="btn" href="/grupy/{{ g.id }}/vcf">Wizytówki na telefon (.vcf)</a>
+  <form method="post" action="/grupy/{{ g.id }}/usun" onsubmit="return confirm('Usunąć tę grupę? Osoby zostaną w kontaktach. Tego nie da się cofnąć.')">
+    <button class="btn danger">Usuń grupę</button>
+  </form>
+</div>
+
+<div class="cols">
+<form method="post" action="/grupy/{{ g.id }}/czlonkowie" class="card">
+  <h2>Osoby w tej grupie</h2>
+  {% if members %}
+  <label class="check"><input type="checkbox" data-all="#w-grupie input[type=checkbox]"> <b>Zaznacz wszystkich</b></label>
+  <div class="scroll tall" id="w-grupie">
+    {% for c in members %}
+    <label class="check"><input type="checkbox" name="ids" value="{{ c.id }}">
+      {{ c.name }} {{ c.surname }} <small>{{ c.phone }}{% if c.blocked %} – nie wysyłaj{% endif %}</small></label>
+    {% endfor %}
+  </div>
+  <h3>Co zrobić z zaznaczonymi?</h3>
+  {% if groups %}
+  <label>Inna grupa
+    <select name="cel">
+      <option value="0">– wybierz grupę –</option>
+      {% for x in groups %}<option value="{{ x.id }}">{{ x.name }} ({{ x.n }})</option>{% endfor %}
+    </select>
+  </label>
+  <p class="row">
+    <button class="btn" name="akcja" value="przenies">Przenieś do wybranej grupy</button>
+    <button class="btn" name="akcja" value="kopiuj">Skopiuj do wybranej grupy</button>
+  </p>
+  <p><small><b>Przenieś</b> – osoby znikną z tej grupy i pojawią się w wybranej. <b>Skopiuj</b> – zostaną tutaj i dodatkowo trafią do wybranej.</small></p>
+  {% endif %}
+  <p><button class="btn danger" name="akcja" value="usun" onclick="return confirm('Usunąć zaznaczone osoby z tej grupy? Zostaną w kontaktach.')">Usuń z tej grupy</button>
+    <small>Osoby zostaną w kontaktach.</small></p>
+  {% else %}
+  <p class="empty">Ta grupa jest pusta. Dodaj osoby z listy obok.</p>
+  {% endif %}
+</form>
+
+<form method="post" action="/grupy/{{ g.id }}/dodaj" class="card">
+  <h2>Dodaj osoby do tej grupy</h2>
+  {% if others %}
+  <input type="search" data-filter="#poza-grupa label" aria-label="Szukaj osoby do dodania" placeholder="Szukaj po imieniu, nazwisku lub numerze…">
+  <div class="scroll tall" id="poza-grupa">
+    {% for c in others %}
+    <label class="check"><input type="checkbox" name="ids" value="{{ c.id }}">
+      {{ c.name }} {{ c.surname }} <small>{{ c.phone }}</small></label>
+    {% endfor %}
+  </div>
+  <p><button class="btn primary">Dodaj zaznaczone do grupy</button></p>
+  {% else %}
+  <p class="empty">Wszystkie Twoje kontakty są już w tej grupie.</p>
+  {% endif %}
+  <p><small>Nie ma tu kogoś? Dodaj go najpierw w zakładce <a href="/kontakty">Kontakty</a> albo wczytaj plik CSV z wpisaną nazwą tej grupy.</small></p>
+</form>
+</div>
+{% endblock %}

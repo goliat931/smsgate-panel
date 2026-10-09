@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>Grupy</h1>
+<p>Grupa to lista osób, do których piszesz razem, np. „Impreza X” albo „Tabliczki – zamówili”. Jedna osoba może być w kilku grupach.</p>
+
+<form method="post" action="/grupy" class="card row">
+  <label for="nowa-grupa"><b>Nazwa nowej grupy:</b></label>
+  <input name="name" id="nowa-grupa" placeholder="np. Impreza X" required>
+  <button class="btn primary">Utwórz grupę</button>
+</form>
+
+{% if groups %}
+<table>
+  <tr><th>Grupa</th><th>Osób</th><th><span class="sr">Czynności</span></th></tr>
+  {% for g in groups %}
+  <tr>
+    <td><a href="/grupy/{{ g.id }}"><b>{{ g.name }}</b></a></td>
+    <td>{{ g.n }}</td>
+    <td class="right">
+      <a class="btn small" href="/grupy/{{ g.id }}">Otwórz i zarządzaj</a>
+      <a class="btn small" href="/wysylka?grupa={{ g.id }}">Napisz do grupy</a>
+      <a class="btn small" href="/grupy/{{ g.id }}/vcf">Wizytówki na telefon</a>
+    </td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="empty">Nie ma jeszcze żadnej grupy. Wpisz nazwę powyżej i kliknij „Utwórz grupę”.</p>
+{% endif %}
+
+{% if total %}
+<p><a class="btn" href="/grupy/0/vcf">Pobierz wizytówki wszystkich kontaktów ({{ total }})</a></p>
+<p><small>„Wizytówki na telefon” to plik .vcf. Prześlij go na telefon (np. e-mailem do siebie) i dotknij – telefon zapyta, czy dodać te osoby do kontaktów.</small></p>
+{% endif %}
+{% endblock %}

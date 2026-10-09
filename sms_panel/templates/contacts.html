@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block main %}
+<div class="row toolbar">
+  <h1>Kontakty <small>({{ contacts|length }})</small></h1>
+  <a class="btn" href="/kontakty/import">Wczytaj listę z pliku</a>
+</div>
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+
+<details class="card" id="dodaj" {{ 'open' if form or new_phone or error }}>
+  <summary>Dodaj jedną osobę</summary>
+  <form method="post" action="/kontakty">
+    <div class="pair">
+      <label>Imię <input name="name" value="{{ form.name if form else '' }}" required></label>
+      <label>Nazwisko (niewymagane) <input name="surname" value="{{ form.surname if form else '' }}"></label>
+    </div>
+    <div class="pair">
+      <label>Telefon <input name="phone" value="{{ form.phone if form else new_phone }}" required inputmode="tel">
+        <small>Np. 600 100 200. Spacje i myślniki nie przeszkadzają.</small></label>
+      <label>E-mail (niewymagany) <input name="email" type="email" value="{{ form.email if form else '' }}"></label>
+    </div>
+    <label>Notatka (niewymagana) <input name="note" value="{{ form.note if form else '' }}"></label>
+    {% include "_groups.html" %}
+    <button class="btn primary">Dodaj osobę</button>
+  </form>
+</details>
+
+<div class="row toolbar">
+  <span class="tags">
+    <a class="tag {{ 'on' if gid is none }}" href="/kontakty" {% if gid is none %}aria-current="true"{% endif %}>Wszyscy</a>
+    {% for g in groups %}<a class="tag {{ 'on' if gid == g.id }}" href="/kontakty?grupa={{ g.id }}" {% if gid == g.id %}aria-current="true"{% endif %}>{{ g.name }} ({{ g.n }})</a>{% endfor %}
+  </span>
+  <a class="btn small" href="{{ '/grupy/%d' % gid if gid is not none else '/grupy' }}">Zarządzaj grupami</a>
+</div>
+{% if contacts %}
+<input type="search" data-filter="#lista tr.osoba" aria-label="Szukaj na liście kontaktów" placeholder="Szukaj po imieniu, nazwisku, numerze, e-mailu…">
+<table id="lista">
+  <tr><th>Imię i nazwisko</th><th>Telefon</th><th>E-mail</th><th>Grupy</th><th>Notatka</th><th><span class="sr">Czynności</span></th></tr>
+  {% for c in contacts %}
+  <tr class="osoba">
+    <td>{{ c.name }} {{ c.surname }} {% if c.blocked %}<span class="tag red">nie wysyłaj</span>{% endif %}</td>
+    <td>{{ c.phone }}</td><td>{{ c.email }}</td><td>{{ c.grupy or '' }}</td><td>{{ c.note }}</td>
+    <td class="right"><a class="btn small" href="/skrzynka?tel={{ c.phone|urlencode }}">Napisz</a>
+        <a class="btn small" href="/kontakty/{{ c.id }}">Zmień</a></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p class="empty">{{ 'W tej grupie nie ma jeszcze nikogo.' if gid is not none else 'Nie ma tu jeszcze nikogo. Dodaj pierwszą osobę powyżej albo wczytaj całą listę z pliku.' }}</p>
+{% if gid is none %}<p><a class="btn primary" href="/kontakty/import">Wczytaj listę z pliku</a></p>{% endif %}
+{% endif %}
+{% endblock %}

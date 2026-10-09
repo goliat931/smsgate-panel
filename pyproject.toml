@@ -1,0 +1,22 @@
+[project]
+name = "sms-panel"
+version = "0.1.0"
+description = "Lokalny panel SMS na bazie SMSGate"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "jinja2>=3.1",
+    "httpx>=0.27",
+    "python-multipart>=0.0.9",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "pyinstaller>=6.10"]
+
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

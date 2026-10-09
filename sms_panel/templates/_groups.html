@@ -1,0 +1,7 @@
+<fieldset>
+  <legend>Grupy</legend>
+  {% for g in groups %}
+  <label class="check"><input type="checkbox" name="grupy" value="{{ g.id }}" {{ 'checked' if mine is defined and g.id in mine }}> {{ g.name }}</label>
+  {% endfor %}
+  <label>Albo wpisz nazwę nowej grupy (niewymagane) <input name="new_group" placeholder="np. Impreza X"></label>
+</fieldset>

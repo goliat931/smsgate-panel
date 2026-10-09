@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>{{ c.name }} {{ c.surname }}</h1>
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="/kontakty/{{ c.id }}" class="card narrow">
+  <div class="pair">
+    <label>Imię <input name="name" value="{{ c.name }}" required></label>
+    <label>Nazwisko <input name="surname" value="{{ c.surname }}"></label>
+  </div>
+  <div class="pair">
+    <label>Telefon <input name="phone" value="{{ c.phone }}" required inputmode="tel"></label>
+    <label>E-mail <input name="email" type="email" value="{{ c.email }}"></label>
+  </div>
+  <label>Notatka <input name="note" value="{{ c.note }}"></label>
+  {% include "_groups.html" %}
+  <label class="check"><input type="checkbox" name="blocked" value="1" {{ 'checked' if c.blocked }}>
+    Nie wysyłaj wiadomości grupowych do tej osoby (rezygnacja)</label>
+  <p class="row">
+    <button class="btn primary">Zapisz</button>
+    <a class="btn" href="/kontakty">Anuluj</a>
+  </p>
+</form>
+<form method="post" action="/kontakty/{{ c.id }}/usun" onsubmit="return confirm('Usunąć ten kontakt? Tego nie da się cofnąć. Rozmowa zostanie w skrzynce.')">
+  <button class="btn small danger">Usuń kontakt</button>
+</form>
+{% endblock %}

@@ -1,0 +1,9 @@
+{# Pasek kroków: steps(["Odbiorcy", "Treść"], 2) – drugi krok jest bieżący. #}
+{% macro steps(names, now) %}
+<ol class="stepsbar" aria-label="Kroki">
+  {% for n in names %}
+  <li class="{{ 'done' if loop.index < now else 'now' if loop.index == now else '' }}" data-step-mark="{{ loop.index }}"
+      {% if loop.index == now %}aria-current="step"{% endif %}><b>{{ loop.index }}</b> {{ n }}</li>
+  {% endfor %}
+</ol>
+{% endmacro %}

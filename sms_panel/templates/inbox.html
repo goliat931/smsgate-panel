@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block main %}
+<div class="inbox">
+  <aside>
+    <div class="filters">
+      {% set q = ('&tel=' ~ tel|urlencode) if tel else '' %}
+      <nav class="tags" aria-label="Które rozmowy pokazać">
+        <a class="tag {{ 'on' if not filtr }}" href="/skrzynka{{ '?tel=' ~ tel|urlencode if tel }}" {% if not filtr %}aria-current="true"{% endif %}>Wszystkie</a>
+        <a class="tag {{ 'on' if filtr == 'wymaga' }}" href="/skrzynka?filtr=wymaga{{ q }}" {% if filtr == 'wymaga' %}aria-current="true"{% endif %}>Wymaga odpowiedzi</a>
+        {% if campaigns %}<a class="tag {{ 'on' if filtr == 'brak' }}" href="/skrzynka?filtr=brak{{ q }}" {% if filtr == 'brak' %}aria-current="true"{% endif %}>Nie odpowiedzieli</a>{% endif %}
+      </nav>
+      {% if filtr == 'brak' %}
+      <form method="get" action="/skrzynka">
+        <input type="hidden" name="filtr" value="brak">
+        {% if tel %}<input type="hidden" name="tel" value="{{ tel }}">{% endif %}
+        <label>Na którą wysyłkę?
+          <select name="kampania" onchange="this.form.submit()">
+            {% for k in campaigns %}<option value="{{ k.id }}" {{ 'selected' if kampania == k.id }}>{{ k.name }}</option>{% endfor %}
+          </select>
+        </label>
+      </form>
+      {% endif %}
+    </div>
+    <div id="rozmowy" data-live>
+      {% for t in threads %}
+      <a class="thread {{ 'on' if t.phone == tel }} {{ 'unread' if t.unread }}"
+         href="/skrzynka?tel={{ t.phone|urlencode }}{% if filtr %}&filtr={{ filtr }}&kampania={{ kampania }}{% endif %}">
+        <span class="who">{{ t.name or 'Nieznany numer' }}{% if t.unread %} <span class="badge">{{ t.unread }}<span class="sr"> nieprzeczytanych</span></span>{% endif %}
+          {% if t.blocked %}<span class="tag red">nie wysyłaj</span>{% endif %}</span>
+        <span class="when">{{ t.created_at|czas }}</span>
+        <span class="last">{% if not t.name %}{{ t.phone }} · {% endif %}{{ 'Ty: ' if t.direction == 'out' }}{{ t.body|truncate(60) }}</span>
+      </a>
+      {% else %}
+      <p class="empty">{{ 'Wszyscy odpowiedzieli na tę wysyłkę.' if filtr == 'brak' else 'Nikt nie czeka na odpowiedź.' if filtr else 'Nie ma jeszcze żadnych rozmów. Odpowiedzi na Twoje SMS-y pojawią się tutaj same.' }}</p>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <section>
+    {% if tel %}
+    <div class="thread-head">
+      <div><b>{{ (contact.name ~ ' ' ~ contact.surname) if contact else 'Nieznany numer' }}</b> <small>{{ tel }}</small>
+        {% if blocked %}<span class="tag red">nie wysyłaj</span>{% endif %}</div>
+      <div class="row">
+        {% if contact %}<a class="btn small" href="/kontakty/{{ contact.id }}">Zmień dane kontaktu</a>
+        {% else %}<a class="btn small primary" href="/kontakty?telefon={{ tel|urlencode }}">Dodaj do kontaktów</a>{% endif %}
+        {% if not blocked %}
+        <form method="post" action="/skrzynka/blokada">
+          <input type="hidden" name="tel" value="{{ tel }}"><input type="hidden" name="on" value="1">
+          <button class="btn small">Nie wysyłaj wiadomości grupowych</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    <div class="messages" id="watek" data-live="bottom">
+      {% for m in thread %}
+      <div class="bubble {{ m.direction }}">{{ m.body }}<small>{{ m.created_at|czas }}{% if m.direction == 'out' %} · <span class="st {{ m.status }}">{{ STATUS_PL[m.status] }}</span>{% if m.error %} – {{ m.error }}{% endif %}{% endif %}</small>{% if m.status == 'failed' and not m.campaign_id %}<button class="btn small" form="f-ponow" formaction="/wiadomosci/{{ m.id }}/ponow">Wyślij ponownie</button>{% endif %}</div>
+      {% else %}
+      <p class="empty">To początek rozmowy. Napisz pierwszą wiadomość poniżej.</p>
+      {% endfor %}
+    </div>
+    <form method="post" id="f-ponow"></form>
+    {% if blocked %}
+    <div class="warn notice">
+      <span><b>Ta osoba poprosiła o brak wiadomości.</b> Kontakt jest oznaczony „nie wysyłaj” i nie dostanie wysyłek grupowych. Pojedynczą odpowiedź nadal możesz wysłać poniżej.</span>
+      <form method="post" action="/skrzynka/blokada">
+        <input type="hidden" name="tel" value="{{ tel }}"><input type="hidden" name="on" value="0">
+        <button class="btn small">Znów wysyłaj grupowo</button>
+      </form>
+    </div>
+    {% endif %}
+    <form method="post" action="/skrzynka/odpowiedz" class="reply">
+      <input type="hidden" name="tel" value="{{ tel }}">
+      <textarea name="body" rows="2" aria-label="Twoja odpowiedź" placeholder="Napisz odpowiedź… (Enter wysyła)" required autofocus></textarea>
+      <button class="btn primary">Wyślij</button>
+    </form>
+    {% else %}
+    <p class="empty center">Wybierz rozmowę z listy po lewej.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
