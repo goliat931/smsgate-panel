@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% from "_steps.html" import steps %}
+{% block main %}
+<p><a href="/kontakty">← Kontakty</a></p>
+<h1>Wczytaj listę osób z pliku</h1>
+{{ steps(["Wybierz plik", "Sprawdź", "Gotowe"], step) }}
+
+{% if step == 1 %}
+<form method="post" action="/kontakty/import" enctype="multipart/form-data" class="card narrow">
+  <h2>Krok 1. Wybierz plik</h2>
+  <p>Potrzebny jest plik z Excela zapisany jako „CSV”. Najlepiej, gdy pierwszy wiersz to nazwy kolumn:</p>
+  <p><code>imię</code> <code>nazwisko</code> <code>telefon</code> <code>e-mail</code> <code>notatka</code> <code>grupa</code></p>
+  <ul class="tight">
+    <li>Kolejność kolumn jest dowolna. Obowiązkowy jest tylko <b>telefon</b>.</li>
+    <li>Imię i nazwisko mogą być razem w jednej kolumnie.</li>
+    <li>Dodatkowe kolumny nie przeszkadzają – panel je pominie.</li>
+    <li>Działa też plik wyeksportowany z Kontaktów Google.</li>
+  </ul>
+  <p><a href="/static/przyklad.csv" download>Pobierz przykładowy plik</a></p>
+  <label>Plik z listą osób <input type="file" name="plik" accept=".csv,.txt" required></label>
+  <fieldset id="wybor-grupy">
+    <legend>Dopisz wszystkich do grupy (niewymagane)</legend>
+    {% if groups %}
+    <p id="p-istniejace">Kliknij jedną z istniejących grup:</p>
+    <p class="tags" role="group" aria-labelledby="p-istniejace">
+      {% for g in groups %}<button type="button" class="tag" data-grupa="{{ g.name }}" aria-pressed="false">{{ g.name }} ({{ g.n }})</button>{% endfor %}
+    </p>
+    {% endif %}
+    <label>{{ 'Albo wpisz nazwę nowej grupy' if groups else 'Wpisz nazwę nowej grupy' }}
+      <input name="grupa" id="grupa" placeholder="np. Impreza X" autocomplete="off" aria-describedby="grupa-stan"></label>
+    <p id="grupa-stan" role="status"><small>Puste pole = osoby nie trafią do żadnej dodatkowej grupy.</small></p>
+  </fieldset>
+  <button class="btn primary big">Dalej: sprawdź plik</button>
+  <p><small>Na razie nic nie zostanie zapisane. Najpierw zobaczysz, co panel odczytał.</small></p>
+</form>
+
+{% elif step == 2 %}
+<div class="card">
+  <h2>Krok 2. Sprawdź, co panel odczytał</h2>
+  {% if rows %}
+  <p class="stats">
+    <span>Nowe osoby: <b>{{ new }}</b></span>
+    <span>Już są w kontaktach: <b>{{ existed }}</b></span>
+    <span>Pominięte wiersze: <b>{{ errors|length }}</b></span>
+  </p>
+  <p>Rozpoznane kolumny: <b>{{ columns|join(', ') }}</b>.{% if grupa %} Wszyscy trafią do grupy <b>{{ grupa }}</b>.{% endif %}
+    {% if existed %}Osobom, które już są w kontaktach, panel niczego nie nadpisze – uzupełni tylko puste pola.{% endif %}</p>
+  {% else %}
+  <p class="error" role="alert">W tym pliku nie ma ani jednego wiersza z poprawnym numerem telefonu. Sprawdź, czy to właściwy plik, i wybierz go jeszcze raz.</p>
+  {% endif %}
+
+  {% if errors %}
+  <div class="warn">
+    <b>Te wiersze zostaną pominięte ({{ errors|length }}):</b>
+    <table class="mini">
+      <tr><th>Wiersz w pliku</th><th>Zawartość</th><th>Powód</th></tr>
+      {% for no, raw, why in errors %}<tr><td>{{ no }}</td><td>{{ raw }}</td><td>{{ why }}</td></tr>{% endfor %}
+    </table>
+    Możesz wczytać resztę teraz, a te wiersze poprawić w pliku i wczytać go później jeszcze raz – nikt nie zostanie dodany dwa razy.
+  </div>
+  {% endif %}
+
+  {% if rows %}
+  <h3>Tak panel odczytał {{ 'pierwsze osoby' if rows|length > 10 else 'osoby' }} z pliku</h3>
+  <table class="mini">
+    <tr><th>Imię</th><th>Nazwisko</th><th>Telefon</th><th>E-mail</th><th>Notatka</th><th>Grupy</th></tr>
+    {% for r in rows[:10] %}
+    <tr><td>{{ r.name }}</td><td>{{ r.surname }}</td><td>{{ r.phone }}</td><td>{{ r.email }}</td><td>{{ r.note }}</td><td>{{ r.groups|join(', ') }}</td></tr>
+    {% endfor %}
+  </table>
+  {% if rows|length > 10 %}<p><small>…i jeszcze {{ rows|length - 10 }}.</small></p>{% endif %}
+  {% endif %}
+</div>
+<div class="row">
+  {% if rows %}
+  <form method="post" action="/kontakty/import/zapisz">
+    <button class="btn primary big">Wczytaj do kontaktów ({{ rows|length }})</button>
+  </form>
+  {% endif %}
+  <a class="btn" href="/kontakty/import">Wróć i wybierz inny plik</a>
+</div>
+
+{% else %}
+<div class="card narrow">
+  <h2>Krok 3. Gotowe</h2>
+  <p class="ok" role="status">Lista została wczytana.</p>
+  <p class="stats">
+    <span>Dodano nowych osób: <b>{{ added }}</b></span>
+    <span>Już były w kontaktach: <b>{{ existed }}</b></span>
+  </p>
+  <p class="row">
+    {% if group %}<a class="btn primary" href="/wysylka?grupa={{ group.id }}">Napisz do grupy „{{ group.name }}”</a>{% endif %}
+    <a class="btn {{ '' if group else 'primary' }}" href="/kontakty">Zobacz kontakty</a>
+    <a class="btn" href="/kontakty/import">Wczytaj kolejny plik</a>
+  </p>
+</div>
+{% endif %}
+{% endblock %}

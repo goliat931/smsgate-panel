@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>Telefon pyta o zgodę na wysyłkę SMS-ów</h1>
+
+<div class="card">
+  <h2>Dlaczego tak się dzieje?</h2>
+  <p>Android pilnuje, żeby żadna aplikacja nie wysłała zbyt wielu SMS-ów naraz. Zwykle pozwala na <b>30 SMS-ów w ciągu 30 minut</b>.
+    Po przekroczeniu pokazuje na telefonie okienko „aplikacja wysyła dużą liczbę wiadomości” i czeka na kliknięcie.</p>
+  <p>Długa wiadomość liczy się jak kilka SMS-ów. Polskie litery (ą, ę, ł…) skracają jeden SMS ze 160 do 70 znaków,
+    więc limit kończy się szybciej.</p>
+  <p>Panel jest teraz ustawiony na <b>{{ limit }} SMS-ów na {{ window }} minut</b>. W tym czasie wyszło już {{ used }}.</p>
+</div>
+
+<div class="cols">
+<div class="card">
+  <h2>Sposób A – bez komputera i kabla (zalecany)</h2>
+  <ol class="steps">
+    <li>Nic nie zmieniaj. Panel sam liczy wysłane SMS-y i <b>robi przerwy</b>, żeby nie przekroczyć limitu telefonu.</li>
+    <li>Większa wysyłka potrwa dłużej (60 SMS-ów to ponad godzina), ale pójdzie sama – nie trzeba przy niej siedzieć.</li>
+    <li>Żeby zmieścić więcej osób, w kroku „Treść” zaznacz <b>Wyślij bez polskich znaków</b> i pisz krótko.</li>
+    <li>Jeśli w okienku na telefonie jest pole „Zapamiętaj” albo „Zawsze zezwalaj” – zaznacz je.</li>
+  </ol>
+</div>
+
+<div class="card">
+  <h2>Sposób B – jednorazowe podniesienie limitu w telefonie</h2>
+  <p>Wymaga kabla USB i kilku poleceń wpisanych na komputerze. Jeśli to brzmi obco, poproś kogoś o pomoc – robi się to raz.</p>
+  <ol class="steps">
+    <li>Na komputerze pobierz z internetu „Android SDK Platform-Tools” (strona developer.android.com) i rozpakuj.</li>
+    <li>W telefonie: Ustawienia → Informacje o telefonie → dotknij 7 razy <b>Numer kompilacji</b>. Potem w „Opcjach programisty” włącz <b>Debugowanie USB</b>.</li>
+    <li>Podłącz telefon kablem i zgódź się na telefonie na debugowanie.</li>
+    <li>W folderze Platform-Tools otwórz okno poleceń i wpisz po kolei:
+      <p><code>adb shell settings put global sms_outgoing_check_max_count 200</code></p>
+      <p><code>adb shell settings put global sms_outgoing_check_interval_ms 1800000</code></p></li>
+    <li>Uruchom telefon ponownie.</li>
+    <li>W panelu wejdź w <a href="/ustawienia">Ustawienia</a> → „Bezpieczna wysyłka” i wpisz nowy limit: 200 SMS-ów na 30 minut.</li>
+    <li>Zrób próbę na 3–5 osobach.</li>
+  </ol>
+  <p class="warn">Na niektórych telefonach (Xiaomi, Redmi, Poco, Oppo, Realme, OnePlus) to może nie zadziałać – producent dodaje własne okienka.
+    W Xiaomi pomaga wyłączenie „Optymalizacji MIUI” w opcjach programisty.</p>
+</div>
+</div>
+
+<div class="card">
+  <h2>Uwaga na operatora</h2>
+  <p>Limit telefonu to nie wszystko. Operator też może zablokować kartę, jeśli uzna wysyłkę za masową albo automatyczną –
+    także w planie z „nielimitowanymi SMS-ami”, bo takie pakiety są zwykle przeznaczone do zwykłej rozmowy między ludźmi.
+    Przeczytaj regulamin swojego planu, wysyłaj powoli, do osób, które się tego spodziewają, i z imieniem w treści.</p>
+  <p><a class="btn" href="/ustawienia">Otwórz ustawienia</a></p>
+</div>
+{% endblock %}

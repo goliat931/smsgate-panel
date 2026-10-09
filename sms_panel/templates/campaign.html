@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block main %}
+<p><a href="/kampanie">← Historia wysyłek</a></p>
+<h1>{{ c.name }}</h1>
+<div class="bubble out">{{ c.body }}</div>
+
+<div id="postep" data-live>
+  <div class="card">
+    <p><b>{{ campaign_state(c) }}</b>
+      {% if c.waiting and c.status == 'running' %} – zostało do wysłania {{ c.waiting }} z {{ c.total }}, około {{ dur(minutes_left) }}
+      {% elif c.waiting %} – czeka {{ c.waiting }} z {{ c.total }}. Nic nie wychodzi, dopóki nie klikniesz „Wznów wysyłkę”.
+      {% elif c.cancelled %} – wysłano {{ c.total - c.cancelled }} z {{ c.total }}, reszta nie wyszła
+      {% else %} – wszystkie {{ c.total }} przekazane do wysłania{% endif %}</p>
+    <progress value="{{ c.total - c.waiting - c.cancelled }}" max="{{ c.total or 1 }}" aria-label="Postęp wysyłki"></progress>
+    <p class="stats">
+      <span>W kolejce: <b>{{ c.waiting }}</b></span>
+      <span>Wysłano, czeka na potwierdzenie: <b>{{ c.unconfirmed }}</b></span>
+      <span>Dostarczono: <b>{{ c.delivered }}</b></span>
+      <span>Błędy: <b>{{ c.failed }}</b></span>
+      <span>Anulowano: <b>{{ c.cancelled }}</b></span>
+      <span class="sep">Odpowiedziało osób: <b>{{ c.replies }}</b></span>
+    </p>
+    {% if c.waiting and c.status == 'running' and slowed %}<p class="info">Telefon pozwala wysłać {{ limit }} SMS-ów na {{ window }} minut, więc panel robi przerwy i sam dokończy wysyłkę. Możesz zamknąć tę stronę. <a href="/pomoc/limit">Jak zwiększyć limit Androida</a></p>{% endif %}
+    {% if c.waiting and online is false %}<p class="error">Telefon jest teraz niedostępny. Wysyłka sama ruszy dalej, gdy połączenie wróci – nic nie przepadnie.</p>{% endif %}
+    {% if c.failed %}<p class="warn">Do {{ c.failed }} {{ 'osoby' if c.failed == 1 else 'osób' }} wiadomość nie doszła. Powód i podpowiedź są na liście poniżej.</p>{% endif %}
+    <p class="row">
+      {% if c.waiting and c.status == 'running' %}
+      <button class="btn" form="f-pauza">Wstrzymaj</button>
+      {% elif c.waiting and c.status == 'paused' %}
+      <button class="btn primary" form="f-wznow">Wznów wysyłkę</button>
+      {% endif %}
+      {% if c.waiting and c.status != 'cancelled' %}
+      <button class="btn danger" form="f-anuluj">Anuluj resztę</button>
+      {% endif %}
+    </p>
+  </div>
+
+  <table>
+    <tr><th>Osoba</th><th>Telefon</th><th>Status</th><th>Odpowiedź</th><th><span class="sr">Czynności</span></th></tr>
+    {% for r in rows %}
+    <tr>
+      <td>{{ r.name or 'Nieznany numer' }}</td><td>{{ r.phone }}</td>
+      <td><span class="st {{ r.status }}">{{ STATUS_PL[r.status] }}</span>{% if r.error %}<br><small>{{ r.error }}</small>{% endif %}</td>
+      <td>{{ 'tak' if r.replied else '–' }}</td>
+      <td class="right">
+        {% if r.status == 'failed' and c.status == 'running' %}<button class="btn small" form="f-ponow" formaction="/wiadomosci/{{ r.id }}/ponow">Wyślij ponownie</button>{% endif %}
+        <a class="btn small" href="/skrzynka?tel={{ r.phone|urlencode }}">Rozmowa</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+</div>
+
+<form method="post" action="/kampanie/{{ c.id }}/pauza" id="f-pauza"></form>
+<form method="post" action="/kampanie/{{ c.id }}/wznow" id="f-wznow"></form>
+<form method="post" action="/kampanie/{{ c.id }}/anuluj" id="f-anuluj" onsubmit="return confirm('Anulować wiadomości, które jeszcze nie wyszły? Tego nie da się cofnąć.')"></form>
+<form method="post" id="f-ponow"></form>
+
+<p class="row">
+  <a class="btn" href="/skrzynka?filtr=brak&kampania={{ c.id }}">Pokaż, kto nie odpowiedział</a>
+  <a class="btn" href="/kampanie/{{ c.id }}/csv">Pobierz jako plik (CSV)</a>
+</p>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block main %}
+<h1>Historia wysyłek</h1>
+{% if campaigns %}
+<div id="historia" data-live>
+<table>
+  <tr><th>Nazwa</th><th>Data</th><th>Stan</th><th>Dostarczono</th><th>Błędy</th><th>Odpowiedziało</th></tr>
+  {% for c in campaigns %}
+  <tr>
+    <td><a href="/kampanie/{{ c.id }}"><b>{{ c.name }}</b></a></td>
+    <td>{{ c.created_at|czas("%d.%m.%Y %H:%M") }}</td><td>{{ campaign_state(c) }}</td>
+    <td>{{ c.delivered }} z {{ c.total }}{% if c.unconfirmed %} <small>({{ c.unconfirmed }} bez potwierdzenia)</small>{% endif %}</td>
+    <td>{% if c.failed %}<span class="st failed">{{ c.failed }}</span>{% else %}0{% endif %}</td><td>{{ c.replies }} z {{ c.total }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>
+<p><small>„Bez potwierdzenia” znaczy, że telefon wysłał SMS, ale operator nie potwierdził jeszcze dostarczenia (np. telefon odbiorcy jest wyłączony).</small></p>
+<p><a class="btn" href="/kampanie.csv">Pobierz tę listę jako plik (CSV)</a></p>
+{% else %}
+<p class="empty">Nie wysłano jeszcze żadnej wiadomości grupowej.</p>
+<p><a class="btn primary" href="/wysylka">Wyślij pierwszą wiadomość</a></p>
+{% endif %}
+{% endblock %}

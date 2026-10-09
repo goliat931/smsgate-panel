@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block main %}
+{% if not configured %}
+<h1>Witaj! Połączmy panel z telefonem</h1>
+<p>To zajmie około 2 minut. Potrzebny jest telefon z Androidem z aplikacją <b>SMSGate</b>, podłączony do tej samej sieci Wi-Fi co ten komputer.</p>
+{% if demo %}<p class="info">Tryb demo: telefon nie jest potrzebny. Zostaw wpisane wartości (login <b>demo</b>, hasło <b>demo</b>), kliknij „Sprawdź połączenie”, a potem „Zapisz i przejdź dalej”.</p>{% endif %}
+{% else %}
+<h1>Ustawienia</h1>
+{% endif %}
+
+<div class="cols">
+<div class="card">
+  <h2>{{ 'Skąd wziąć te dane?' if configured else 'Krok 1. Włącz serwer w telefonie' }}</h2>
+  <ol class="steps">
+    <li>Na telefonie otwórz aplikację <b>SMSGate</b>.</li>
+    <li>Włącz przełącznik <b>Local Server</b> (serwer lokalny).</li>
+    <li>Dotknij dużego przycisku <b>Offline</b> na dole. Po chwili zmieni się na <b>Online</b>.</li>
+    <li>W ramce <b>Local Server</b> pojawią się trzy rzeczy:
+      <ul>
+        <li><b>Local address</b> – to jest „Adres telefonu”, np. <code>192.168.1.50:8080</code></li>
+        <li><b>Username</b> – to jest „Login”</li>
+        <li><b>Password</b> – to jest „Hasło”</li>
+      </ul>
+    </li>
+  </ol>
+  <p><small>Telefon i komputer muszą być w tej samej sieci Wi-Fi. Pełny opis krok po kroku jest w pliku INSTRUKCJA.</small></p>
+</div>
+
+<form method="post" action="/ustawienia" class="card" id="ustawienia">
+  <h2>{{ 'Dane z telefonu' if configured else 'Krok 2. Przepisz dane z telefonu' }}</h2>
+  <label>Adres telefonu
+    <input name="address" value="{{ address }}" required autocomplete="off" aria-describedby="p-adres">
+    <small id="p-adres">W aplikacji SMSGate: „Local address”, np. 192.168.1.50:8080</small>
+  </label>
+  <label>Login
+    <input name="login" value="{{ login }}" required autocomplete="off" aria-describedby="p-login">
+    <small id="p-login">W aplikacji: „Username”</small>
+  </label>
+  <label for="haslo">Hasło</label>
+  <span class="row">
+    <input name="password" type="password" value="{{ password }}" required autocomplete="off" id="haslo" aria-describedby="p-haslo">
+    <button type="button" class="btn small" id="pokaz" aria-controls="haslo">Pokaż hasło</button>
+  </span>
+  <p><small id="p-haslo">W aplikacji: „Password”</small></p>
+
+  {% if not configured %}<h2>Krok 3. Sprawdź połączenie i zapisz</h2>{% endif %}
+  <p id="wynik" role="status" class="{{ 'ok' if test and test[0] else 'error' if test else '' }}">{{ test[1] if test else '' }}</p>
+  <p class="row">
+    <button type="button" class="btn" id="sprawdz">Sprawdź połączenie</button>
+    <button class="btn primary">{{ 'Zapisz' if configured else 'Zapisz i przejdź dalej' }}</button>
+  </p>
+
+  <details {% if configured %}{% else %}hidden{% endif %}>
+    <summary>Bezpieczna wysyłka (tempo i limity)</summary>
+    <p>Te ustawienia chronią przed blokadą numeru i przed okienkiem „aplikacja wysyła dużo wiadomości” na telefonie.
+      Jeśli nie wiesz, co wpisać – zostaw, jak jest.</p>
+
+    <h3>Przerwa między SMS-ami w wysyłce grupowej</h3>
+    <p class="row">Jeden SMS co
+      <input name="pace_min" type="number" min="1" max="600" step="1" value="{{ pace_min|float|int }}" class="num" aria-label="Najkrótsza przerwa w sekundach"> do
+      <input name="pace_max" type="number" min="1" max="600" step="1" value="{{ pace_max|float|int }}" class="num" aria-label="Najdłuższa przerwa w sekundach"> sekund</p>
+    <p><small>Panel losuje przerwę z tego zakresu, żeby wysyłka nie wyglądała na automat. Zalecane: 8 do 20.</small></p>
+
+    <h3>Limit SMS-ów w telefonie</h3>
+    <p class="row">Telefon pozwala wysłać
+      <input name="limit_count" type="number" min="1" max="10000" step="1" value="{{ limit_count|float|int }}" class="num" aria-label="Limit SMS-ów telefonu"> SMS-ów na
+      <input name="limit_window" type="number" min="1" max="1440" step="1" value="{{ limit_window|float|int }}" class="num" aria-label="Długość okna limitu w minutach"> minut</p>
+    <p><small>Android zwykle pozwala na 30 SMS-ów na 30 minut, potem każe potwierdzać na telefonie. Panel sam robi przerwy,
+      żeby tego limitu nie przekroczyć: wysyłki grupowe zużywają najwyżej {{ reserve }}%, reszta zostaje na Twoje odpowiedzi.
+      Długa wiadomość liczy się jak kilka SMS-ów. <a href="/pomoc/limit">Jak zwiększyć limit Androida</a></small></p>
+
+    <h3>Duża wysyłka</h3>
+    <p class="row">Pytaj dodatkowo o zgodę, gdy odbiorców jest więcej niż
+      <input name="max_recipients" type="number" min="1" max="100000" step="1" value="{{ max_recipients|float|int }}" class="num" aria-label="Próg dużej wysyłki, liczba osób"></p>
+    <p><small>Zabezpieczenie przed pomyłką, np. zaznaczeniem nie tej grupy.</small></p>
+  </details>
+</form>
+</div>
+
+{% if configured %}
+<div class="card">
+  <h2>Powiadomienia o nowych wiadomościach</h2>
+  <p>Gdy ktoś odpisze, Windows pokaże dymek w rogu ekranu – także wtedy, gdy panel jest zminimalizowany albo przykryty innym oknem.
+    Karta z panelem musi być otwarta w przeglądarce.</p>
+  <p id="pow-stan" role="status"></p>
+  <p class="row">
+    <button type="button" class="btn primary" id="pow-wlacz">Włącz powiadomienia</button>
+    <button type="button" class="btn" id="pow-probne" hidden>Pokaż próbne powiadomienie</button>
+  </p>
+  <p><small>Po kliknięciu „Włącz” przeglądarka zapyta o zgodę – wybierz „Zezwól”. Nie widać dymka? W Windows otwórz
+    Ustawienia → System → Powiadomienia i sprawdź, czy przeglądarka może je pokazywać i czy tryb „Nie przeszkadzać” jest wyłączony.</small></p>
+</div>
+{% endif %}
+
+{% if demo and configured %}
+<div class="card">
+  <h2>Dane przykładowe (tylko tryb demo)</h2>
+  <p>Możesz przywrócić przykładowe kontakty, grupy, wysyłki i rozmowy. To usunie wszystko, co teraz jest w panelu demo.</p>
+  <form method="post" action="/demo/przyklady" onsubmit="return confirm('Usunąć obecne dane demo i wczytać przykłady od nowa?')">
+    <button class="btn danger">Usuń dane demo i wczytaj przykłady od nowa</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

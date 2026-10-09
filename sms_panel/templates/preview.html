@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% from "_steps.html" import steps %}
+{% block main %}
+<h1>Nowa wysyłka grupowa</h1>
+{{ steps(["Odbiorcy", "Treść", "Podgląd", "Wysyłka"], 3) }}
+<div class="card">
+  <h2>Krok 3. Sprawdź przed wysłaniem</h2>
+  <p class="big-number">{{ to|length }} <small>{{ 'odbiorca' if to|length == 1 else 'odbiorców' }}</small></p>
+  <ul>
+    <li>Każda wiadomość to <b>{{ seg_max }}</b> {{ sms_word(seg_max) }}{{ " (długa treść jest dzielona na części)" if seg_max > 1 }}.
+      Razem z karty SIM zejdzie <b>{{ seg_total }}</b> {{ sms_word(seg_total) }}.
+      {% if form.bez_pl %}Treść pójdzie <b>bez polskich znaków</b>.
+      {% elif unicode %}W treści są polskie litery, więc jeden SMS mieści 70 znaków zamiast 160.{% endif %}</li>
+    <li>Wysyłka potrwa około <b>{{ dur(minutes) }}</b>. Panel wysyła powoli, żeby operator nie zablokował numeru.</li>
+    {% if skipped %}<li><b>Pominę {{ skipped|length }}</b> (zrezygnowali z wiadomości): {{ skipped|map(attribute='name')|join(', ') }}.</li>{% endif %}
+  </ul>
+
+  {% if slowed %}
+  <p class="warn">Ta wysyłka zajmie około {{ dur(minutes) }}, bo telefon pozwala wysłać {{ limit }} SMS-ów na {{ window }} minut
+    {%- if used %} (w tym czasie wyszło już {{ used }}){% endif %}. Panel sam poczeka i dokończy – nie trzeba przy tym siedzieć.
+    {% if seg_plain and seg_plain < seg_total %}Bez polskich znaków byłoby to {{ seg_plain }} zamiast {{ seg_total }} SMS-ów: kliknij „Wróć i popraw” i zaznacz „Wyślij bez polskich znaków”.{% endif %}
+    Chcesz wysyłać szybciej? Zobacz: <a href="/pomoc/limit" target="_blank">Jak zwiększyć limit Androida</a>.</p>
+  {% endif %}
+  {% for t in tips %}<p class="warn">{{ t }}</p>{% endfor %}
+
+  <h2>Tak będą wyglądać pierwsze wiadomości</h2>
+  {% for c, text in samples %}
+  <div class="sample"><small>Do: {{ c.name }} {{ c.surname }} ({{ c.phone }})</small><div class="bubble out">{{ text }}</div></div>
+  {% endfor %}
+
+  <details>
+    <summary>Pokaż wszystkich odbiorców</summary>
+    <p>{% for c in to %}{{ c.name }} {{ c.surname }} <small>({{ c.phone }})</small>{{ ', ' if not loop.last }}{% endfor %}</p>
+  </details>
+</div>
+
+<div class="row">
+  <form method="post" action="/wysylka/start" class="card confirm">
+    <h2>Krok 4. Wyślij</h2>
+    <input type="hidden" name="name" value="{{ campaign_name }}">
+    <input type="hidden" name="body" value="{{ form.body }}">
+    <input type="hidden" name="nonce" value="{{ nonce }}">
+    <input type="hidden" name="ids" value="{{ to|map(attribute='id')|join(',') }}">
+    {% if form.bez_pl %}<input type="hidden" name="bez_pl" value="1">{% endif %}
+    <label class="check"><input type="checkbox" name="potwierdzam" value="1" required>
+      Sprawdziłem(-am) treść i odbiorców. Chcę wysłać.</label>
+    {% if big %}
+    <label class="check"><input type="checkbox" name="duza" value="1" required>
+      <b>To duża wysyłka: {{ to|length }} osób</b> (więcej niż {{ big }}). Wiem o tym i chcę wysłać do wszystkich.</label>
+    {% endif %}
+    <button class="btn primary big">Wyślij do {{ to|length }} {{ 'osoby' if to|length == 1 else 'osób' }}</button>
+  </form>
+  <form method="post" action="/wysylka/popraw">
+    <input type="hidden" name="name" value="{{ form.name }}">
+    <input type="hidden" name="body" value="{{ form.body }}">
+    {% if form.bez_pl %}<input type="hidden" name="bez_pl" value="1">{% endif %}
+    {% for g in form.grupy %}<input type="hidden" name="grupy" value="{{ g }}">{% endfor %}
+    {% for o in form.osoby %}<input type="hidden" name="osoby" value="{{ o }}">{% endfor %}
+    <button class="btn">Wróć i popraw</button>
+  </form>
+</div>
+{% endblock %}

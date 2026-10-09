@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% from "_steps.html" import steps %}
+{% block main %}
+<h1>Nowa wysyłka grupowa</h1>
+{% if not contacts %}
+<p class="empty">Najpierw dodaj osoby w zakładce <a href="/kontakty">Kontakty</a>.</p>
+{% else %}
+{{ steps(["Odbiorcy", "Treść", "Podgląd", "Wysyłka"], step) }}
+{% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="/wysylka/podglad" id="wysylka" data-start="{{ step }}">
+  <div class="card" data-step="1">
+    <h2>Krok 1. Do kogo? <small id="ile-osob" role="status"></small></h2>
+    {% if groups %}
+    <fieldset>
+      <legend>Całe grupy <small>(<a href="/grupy">zarządzaj grupami</a>)</small></legend>
+      {% for g in groups %}
+      <label class="check"><input type="checkbox" name="grupy" value="{{ g.id }}" {{ 'checked' if g.id in form.grupy }}> {{ g.name }} ({{ g.n }})</label>
+      {% endfor %}
+    </fieldset>
+    {% endif %}
+    <fieldset>
+      <legend>Pojedyncze osoby</legend>
+      <input type="search" data-filter="#osoby label" aria-label="Szukaj osoby" placeholder="Szukaj po imieniu, nazwisku lub numerze…">
+      <div class="scroll" id="osoby">
+        {% for c in contacts %}
+        <label class="check {{ 'muted' if c.blocked }}">
+          <input type="checkbox" name="osoby" value="{{ c.id }}" data-g="{{ in_groups.get(c.id, '') }}" {{ 'checked' if c.id in form.osoby }} {{ 'disabled' if c.blocked }}>
+          {{ c.name }} {{ c.surname }} <small>{{ c.phone }}{% if c.blocked %} – nie wysyłaj{% endif %}</small></label>
+        {% endfor %}
+      </div>
+    </fieldset>
+    <p id="brak-osob" class="error" role="alert" hidden>Zaznacz przynajmniej jedną grupę albo osobę.</p>
+    <button type="button" class="btn primary big" data-go="2">Dalej: napisz treść</button>
+  </div>
+
+  <div class="card" data-step="2">
+    <h2>Krok 2. Co napisać? <small id="ile-osob-2"></small></h2>
+    {% if templates_ %}
+    <label>Wstaw zapisany szablon (niewymagane)
+      <select id="szablon">
+        <option value="">– wybierz –</option>
+        {% for t in templates_ %}<option value="{{ t.body }}">{{ t.name }}</option>{% endfor %}
+      </select>
+    </label>
+    {% endif %}
+    <label for="tresc">Treść wiadomości</label>
+    <textarea name="body" id="tresc" rows="6" required aria-describedby="licznik podp-tresc">{{ form.body }}</textarea>
+    <p class="row">
+      <button type="button" class="btn small" data-insert="{imie}">Wstaw imię</button>
+      <button type="button" class="btn small" data-insert="{nazwisko}">Wstaw nazwisko</button>
+      <span id="licznik" role="status"></span>
+    </p>
+    <label class="check"><input type="checkbox" name="bez_pl" id="bez_pl" value="1" {{ 'checked' if form.bez_pl }}>
+      Wyślij bez polskich znaków (ą→a, ł→l…) – zwykle wychodzi 2–3 razy mniej SMS-ów</label>
+    <p id="podp-tresc"><small>W miejscu „Wstaw imię” każda osoba dostanie swoje imię. Przykład: „Cześć {imie}, spotkanie przeniesione na 18:00.”</small></p>
+    <label>Nazwa tej wysyłki (dla Ciebie, niewymagana) <input name="name" value="{{ form.name }}" placeholder="np. Zmiana godziny – Impreza X"></label>
+    <label>Zapisz tę treść jako szablon na później (niewymagane) <input name="template_name" placeholder="Nazwa szablonu"></label>
+    <p class="row">
+      <button type="button" class="btn" data-go="1">Wróć do odbiorców</button>
+      <button class="btn primary big">Dalej: zobacz podgląd</button>
+    </p>
+    <p><small>Na razie nic nie zostanie wysłane. Najpierw zobaczysz podgląd.</small></p>
+  </div>
+</form>
+
+{% if templates_ %}
+<details>
+  <summary>Zapisane szablony ({{ templates_|length }})</summary>
+  <table>
+    {% for t in templates_ %}
+    <tr><td><b>{{ t.name }}</b></td><td>{{ t.body }}</td>
+      <td class="right"><form method="post" action="/szablony/{{ t.id }}/usun" onsubmit="return confirm('Usunąć ten szablon?')"><button class="btn small danger">Usuń szablon</button></form></td></tr>
+    {% endfor %}
+  </table>
+</details>
+{% endif %}
+{% endif %}
+{% endblock %}

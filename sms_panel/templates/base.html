@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel SMS</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-ostatnia="{{ last_in.id if last_in else 0 }}" data-od="{{ (last_in.name or last_in.phone) if last_in else '' }}" data-tel="{{ last_in.phone if last_in else '' }}">
+<header>
+  <strong class="logo">Panel SMS</strong>
+  <nav aria-label="Główne">
+    {% for url, label in [("/skrzynka","Skrzynka"),("/wysylka","Nowa wysyłka"),("/kontakty","Kontakty"),("/grupy","Grupy"),("/kampanie","Historia"),("/ustawienia","Ustawienia")] %}
+    <a href="{{ url }}" {% if path.startswith(url) %}class="on" aria-current="page"{% endif %}>{{ label }}{% if url == "/skrzynka" %}<span id="nowe" data-live>{% if unread %} <span class="badge">{{ unread }}<span class="sr"> nieprzeczytanych</span></span>{% endif %}</span>{% endif %}</a>
+    {% endfor %}
+  </nav>
+  <span id="stan" data-live>
+    {% if not configured %}<span class="dot grey"></span> Telefon niepodłączony
+    {% elif online %}<span class="dot green" title="Panel co kilka sekund sprawdza połączenie z telefonem"></span> Telefon połączony
+    {% elif online is none %}<span class="dot grey"></span> Łączę z telefonem…
+    {% else %}<span class="dot red"></span> Brak połączenia z telefonem{% endif %}
+  </span>
+</header>
+{% if demo %}<div class="demo">TRYB DEMO – to tylko ćwiczenie. Żadne SMS-y nie są naprawdę wysyłane.</div>{% endif %}
+<div id="pasek" data-live aria-live="polite">{% if configured and online is false %}<div class="offline"><b>Brak połączenia z telefonem. Ponawiam próbę…</b>
+  {{ phone_error }} Wiadomości czekają w kolejce i nie przepadną. <a href="/ustawienia">Otwórz ustawienia</a></div>
+{% elif stuck %}<div class="offline amber"><b>Sprawdź ekran telefonu.</b> Telefon przyjął {{ stuck }} {{ 'wiadomość' if stuck == 1 else 'wiadomości' }}, ale od kilku minut {{ 'jej' if stuck == 1 else 'ich' }} nie wysłał.
+  Android może pytać o zgodę na wysyłkę SMS-ów. <a href="/pomoc/limit">Co zrobić?</a></div>
+{% elif limited %}<div class="offline amber"><b>Panel robi przerwę w wysyłaniu.</b> Telefon pozwala tylko na określoną liczbę SMS-ów w krótkim czasie.
+  Czekające wiadomości wyjdą same, gdy zwolni się miejsce. <a href="/pomoc/limit">Dlaczego?</a></div>{% endif %}</div>
+<main>
+{% if msg %}<p class="info" role="status">{{ msg }}</p>{% endif %}
+{% block main %}{% endblock %}
+</main>
+<script src="/static/app.js"></script>
+</body>
+</html>

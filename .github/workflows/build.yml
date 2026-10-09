@@ -1,0 +1,29 @@
+name: build
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: "3.12"
+      - if: runner.os == 'Windows'
+        run: ./build.ps1
+        shell: pwsh
+      - if: runner.os != 'Windows'
+        run: sh build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SmsPanel-${{ runner.os }}
+          path: dist/
