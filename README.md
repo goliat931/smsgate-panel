@@ -13,7 +13,8 @@
 [![Pobierz macOS](https://img.shields.io/badge/macOS-App-000000?logo=apple&logoColor=white)](https://github.com/goliat931/smsgate-panel/releases/latest/download/SmsPanel)
 
 Lokalny panel WWW do SMS-ów przez telefon z Androidem i [SMSGate](https://sms-gate.app) w trybie lokalnym:
-kontakty i grupy (import CSV, eksport wizytówek .vcf), wysyłka grupowa z podglądem i bezpiecznym tempem, skrzynka z wątkami, historia z eksportem CSV.
+kontakty i grupy (import CSV, 
+eksport wizytówek .vcf), wysyłka grupowa z podglądem i bezpiecznym tempem, skrzynka z wątkami, historia z eksportem CSV.
 
 - Instrukcja dla użytkownika: [INSTRUKCJA.md](INSTRUKCJA.md)
 - Dlaczego tak, a nie inaczej: [DECISIONS.md](DECISIONS.md)
