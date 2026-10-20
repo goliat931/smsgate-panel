@@ -1,5 +1,17 @@
 # SMS Panel
 
+<p align="center">
+  <a href="https://youtu.be/Ga1Mi0z-MFY">
+    <img src="https://img.youtube.com/vi/Ga1Mi0z-MFY/maxresdefault.jpg" alt="Instrukcja wideo" width="900">
+  </a>
+</p>
+
+[▶ Obejrzyj instrukcję wideo](https://youtu.be/Ga1Mi0z-MFY)
+
+[![Pobierz Windows EXE](https://img.shields.io/badge/Windows-EXE-0078D6?logo=windows&logoColor=white)](https://github.com/goliat931/smsgate-panel/releases/latest/download/SmsPanel.exe)
+
+[![Pobierz macOS](https://img.shields.io/badge/macOS-App-000000?logo=apple&logoColor=white)](https://github.com/goliat931/smsgate-panel/releases/latest/download/SmsPanel)
+
 Lokalny panel WWW do SMS-ów przez telefon z Androidem i [SMSGate](https://sms-gate.app) w trybie lokalnym:
 kontakty i grupy (import CSV, eksport wizytówek .vcf), wysyłka grupowa z podglądem i bezpiecznym tempem, skrzynka z wątkami, historia z eksportem CSV.
 
