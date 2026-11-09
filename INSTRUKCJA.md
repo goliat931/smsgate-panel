@@ -310,4 +310,4 @@ Gdy pojawi się nowa wersja, panel pokaże u góry niebieski pasek „Jest nowa 
 
 Kontakty, grupy, wiadomości i ustawienia leżą w osobnym folderze, więc zostaną. Panel sprawdza nowe wersje raz
 dziennie w internecie (pyta tylko stronę GitHub o numer najnowszej wersji, niczego nie wysyła). Numer Twojej wersji
-jest na dole strony **Ustawienia**.
+jest na dole strony **Ustawienia** – obok jest przycisk **Sprawdź aktualizacje**, który sprawdza od razu.

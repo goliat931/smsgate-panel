@@ -295,3 +295,15 @@ def test_settings_show_data_folder_and_delete_needs_confirmation(tmp_path):
     r = c.post("/dane/usun", data={"potwierdzam": "1"}, follow_redirects=True)
     assert "Usunięto wszystkie dane" in r.text and "Połączmy panel z telefonem" in r.text
     assert db.one("SELECT COUNT(*) n FROM contacts")["n"] == 0 and not db.get("address")
+
+
+def test_check_updates_button():
+    import httpx
+    db, app, c = make()
+    replies = iter([httpx.Response(200, json={"tag_name": "v0.0.1"}), httpx.Response(200, json={"tag_name": "v99.0.0"})])
+    app.state.http = httpx.Client(transport=httpx.MockTransport(lambda r: next(replies)))
+    assert "Masz najnowszą wersję panelu" in c.post("/aktualizacje", follow_redirects=True).text
+    r = c.post("/aktualizacje", follow_redirects=True)
+    assert "Jest nowa wersja 99.0.0" in r.text and "Pobierz nowy plik" in r.text
+    app.state.http = httpx.Client(transport=httpx.MockTransport(lambda r: (_ for _ in ()).throw(httpx.ConnectError("x"))))
+    assert "Nie udało się sprawdzić" in c.post("/aktualizacje", follow_redirects=True).text

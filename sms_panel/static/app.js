@@ -1,7 +1,7 @@
 // Odświeżanie na żywo: elementy z data-live są co 3 s podmieniane świeżą wersją z serwera.
 // Komunikat „Zapisano / Gotowe” jest jednorazowy: znika z adresu, żeby nie wracał przy odświeżeniu
-if (location.search.includes('msg=')) {
-  const u = new URL(location.href); u.searchParams.delete('msg'); history.replaceState(null, '', u);
+if (/[?&](msg|wersja)=/.test(location.search)) {
+  const u = new URL(location.href); u.searchParams.delete('msg'); u.searchParams.delete('wersja'); history.replaceState(null, '', u);
 }
 const live = () => document.querySelectorAll('[data-live]');
 const toBottom = () => document.querySelectorAll('[data-live=bottom]').forEach(el => el.scrollTop = el.scrollHeight);
@@ -89,6 +89,11 @@ $('ustawienia')?.addEventListener('submit', () => {
   const out = $('wynik');
   out.className = 'info busy'; out.textContent = 'Łączę z telefonem i zapisuję… (to może potrwać do 10 sekund)';
   setTimeout(() => $('ustawienia').querySelectorAll('button').forEach(b => b.disabled = true));
+});
+
+$('wersja')?.addEventListener('submit', e => {   // pytanie GitHuba może chwilę potrwać
+  const b = e.target.querySelector('button');
+  setTimeout(() => { b.disabled = true; b.classList.add('busy'); b.textContent = 'Sprawdzam…'; });
 });
 
 // Wyszukiwarki list (data-filter = co filtrować) i „zaznacz wszystkich” (data-all = które pola)

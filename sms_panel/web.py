@@ -90,7 +90,8 @@ def dur(minutes):
 
 def go(url, msg=None):
     if msg:
-        url += ("&" if "?" in url else "?") + "msg=" + quote(msg)
+        url, _, anchor = url.partition("#")   # komunikat musi być przed #kotwicą, inaczej serwer go nie zobaczy
+        url += ("&" if "?" in url else "?") + "msg=" + quote(msg) + ("#" + anchor if anchor else "")
     return RedirectResponse(url, 303)
 
 
@@ -130,13 +131,18 @@ def create_app(db, demo=False, port=None, start_worker=True, check_updates=False
 
     worker = Worker(db, gateway)
 
+    def check_update():
+        """Pyta GitHuba o najnowsze wydanie. Do GitHuba idzie tylko to zapytanie, żadne dane. False = nie wyszło."""
+        try:
+            tag = app.state.http.get(RELEASES, timeout=10).json()["tag_name"]
+        except Exception:   # brak internetu itp. - panel działa dalej bez informacji o wersji
+            return False
+        app.state.update = newer(tag)
+        return True
+
     def watch_updates():
-        """Raz na dobę pyta GitHuba o najnowsze wydanie. Do GitHuba idzie tylko to zapytanie, żadne dane."""
         while not worker.stop.is_set():
-            try:
-                app.state.update = newer(httpx.get(RELEASES, timeout=10).json().get("tag_name"))
-            except Exception:   # brak internetu itp. - panel działa dalej bez informacji o wersji
-                pass
+            check_update()
             worker.stop.wait(24 * 3600)
 
     @asynccontextmanager
@@ -333,6 +339,12 @@ def create_app(db, demo=False, port=None, start_worker=True, check_updates=False
         app.state.pending_import = None
         worker.online, worker.error, worker.limited = None, "", False
         return go("/ustawienia", "Usunięto wszystkie dane z panelu. Możesz połączyć go z telefonem od nowa.")
+
+    @app.post("/aktualizacje")
+    def updates_check():
+        # wynik pokazujemy przy samym przycisku (dół strony), bo komunikatu u góry nie byłoby widać
+        result = "nowa" if check_update() and app.state.update else "aktualna" if not app.state.update else "blad"
+        return go(f"/ustawienia?wersja={result}#wersja")
 
     @app.post("/demo/przyklady")
     def demo_examples():
