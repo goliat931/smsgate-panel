@@ -1,6 +1,6 @@
 [project]
 name = "sms-panel"
-version = "0.1.0"
+version = "0.1.1"
 description = "Lokalny panel SMS na bazie SMSGate"
 requires-python = ">=3.11"
 dependencies = [

@@ -54,7 +54,7 @@ def main():
     db = DB(folder / "panel.db")
     if args.demo:
         seed(db)  # przykładowe kontakty, grupy i rozmowy (tylko do pustej bazy)
-    app = create_app(db, demo=args.demo, port=port)
+    app = create_app(db, demo=args.demo, port=port, check_updates=not args.demo)
     if not args.no_browser:
         threading.Timer(1.0, webbrowser.open, [url]).start()
     print(f"\n  Panel SMS działa{' (TRYB DEMO)' if args.demo else ''}. Nie zamykaj tego okna.\n"

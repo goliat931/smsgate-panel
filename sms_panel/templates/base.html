@@ -29,6 +29,9 @@
 {% elif limited %}<div class="offline amber"><b>Panel robi przerwę w wysyłaniu.</b> Telefon pozwala tylko na określoną liczbę SMS-ów w krótkim czasie.
   Czekające wiadomości wyjdą same, gdy zwolni się miejsce. <a href="/pomoc/limit">Dlaczego?</a></div>{% endif %}</div>
 <main>
+{% if update %}<p class="info">Jest nowa wersja panelu ({{ update }}, masz {{ version }}).
+  <a href="https://github.com/goliat931/smsgate-panel/releases/latest" target="_blank" rel="noopener">Pobierz nowy plik SmsPanel.exe</a>,
+  zamknij panel i podmień stary plik na nowy. Kontakty, grupy i wiadomości zostaną.</p>{% endif %}
 {% if msg %}<p class="info" role="status">{{ msg }}</p>{% endif %}
 {% block main %}{% endblock %}
 </main>

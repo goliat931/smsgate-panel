@@ -268,3 +268,13 @@ def test_security_headers_and_csv_formula_cells():
     assert csv_cell("=HYPERLINK(1)") == "'=HYPERLINK(1)" and csv_cell("@x") == "'@x" and csv_cell("-2+3") == "'-2+3"
     assert csv_cell("+48600100200") == "+48600100200" and csv_cell("Anna") == "Anna" and csv_cell(5) == 5
 
+
+
+def test_update_bar_only_for_newer_version():
+    from sms_panel.web import newer
+    assert newer("v0.2.0", "0.1.0") == "0.2.0" and newer("v0.10.0", "0.9.1") == "0.10.0"
+    assert newer("v0.1.0", "0.1.0") is None and newer(None) is None and newer("nightly") is None
+    db, app, c = make()
+    assert "Jest nowa wersja" not in c.get("/pomoc/limit").text
+    app.state.update = "9.0.0"
+    assert "Jest nowa wersja panelu (9.0.0" in c.get("/pomoc/limit").text

@@ -205,3 +205,10 @@ minimalne uprawnienia w GitHub Actions; z testów usunięte prawdziwe dane osobo
 - Każdy program i każdy użytkownik zalogowany na tym komputerze ma dostęp do panelu (brak logowania).
 - Brak limitu wielkości wczytywanego pliku CSV (plik wybiera sam użytkownik).
 - Plik exe nie jest podpisany - Windows SmartScreen może ostrzegać przy pierwszym uruchomieniu.
+
+## Aktualizacje (2026-11-09)
+
+Repozytorium publiczne, licencja MIT. Tag `v*` buduje Windows i macOS i publikuje wydanie na GitHubie
+(`SmsPanel.exe`, `SmsPanel`), CI sprawdza zgodność tagu z `sms_panel.__version__`. Panel (poza trybem demo) raz na dobę
+pyta `api.github.com/.../releases/latest` i pokazuje pasek z linkiem. Bez samodzielnej podmiany pliku: Windows nie
+pozwala nadpisać działającego exe, a plik nie jest podpisany. Błąd sieci = brak paska, panel działa dalej.

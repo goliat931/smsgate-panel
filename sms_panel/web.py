@@ -2,6 +2,7 @@
 import csv
 import io
 import logging
+import threading
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
@@ -14,6 +15,7 @@ from fastapi.responses import PlainTextResponse, RedirectResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
+from . import __version__
 from .core import normalize_phone, parse_csv, plain, render, sms_segments, vcard
 from .db import now_iso
 from .demo import make_demo, reset as demo_reset
@@ -21,6 +23,17 @@ from .gateway import Gateway, GatewayError, parse_address
 from .worker import RESERVE, Worker, budget
 
 HERE = Path(__file__).parent
+RELEASES = "https://api.github.com/repos/goliat931/smsgate-panel/releases/latest"
+
+
+def newer(tag, current=__version__):
+    """'v0.2.0' -> '0.2.0', gdy to wersja nowsza od bieżącej; inaczej None."""
+    def parts(v):
+        return tuple(int(x) for x in v.lstrip("v").split("."))
+    try:
+        return tag.lstrip("v") if parts(tag) > parts(current) else None
+    except (AttributeError, ValueError):
+        return None
 SHORTENERS = ("bit.ly", "tinyurl.", "t.co/", "cutt.ly", "tiny.pl", "goo.gl", "is.gd", "ow.ly", "rebrand.ly", "lnk.")
 log = logging.getLogger("sms_panel")
 
@@ -94,7 +107,7 @@ def csv_response(filename, header, rows):
                     headers={"Content-Disposition": f'attachment; filename="{filename}"'})
 
 
-def create_app(db, demo=False, port=None, start_worker=True):
+def create_app(db, demo=False, port=None, start_worker=True, check_updates=False):
     templates = Jinja2Templates(directory=HERE / "templates")
     templates.env.filters["czas"] = local_time
     templates.env.globals.update(STATUS_PL=STATUS_PL, campaign_state=campaign_state, sms_word=sms_word, dur=dur)
@@ -114,8 +127,19 @@ def create_app(db, demo=False, port=None, start_worker=True):
 
     worker = Worker(db, gateway)
 
+    def watch_updates():
+        """Raz na dobę pyta GitHuba o najnowsze wydanie. Do GitHuba idzie tylko to zapytanie, żadne dane."""
+        while not worker.stop.is_set():
+            try:
+                app.state.update = newer(httpx.get(RELEASES, timeout=10).json().get("tag_name"))
+            except Exception:   # brak internetu itp. - panel działa dalej bez informacji o wersji
+                pass
+            worker.stop.wait(24 * 3600)
+
     @asynccontextmanager
     async def lifespan(app):
+        if check_updates:
+            threading.Thread(target=watch_updates, daemon=True).start()
         if start_worker:
             worker.start()
         yield
@@ -125,6 +149,7 @@ def create_app(db, demo=False, port=None, start_worker=True):
     app.state.http = httpx.Client(timeout=httpx.Timeout(8, connect=3))
     app.state.worker = worker
     app.state.pending_import = None
+    app.state.update = None   # numer nowszej wersji, gdy jest
     app.mount("/static", StaticFiles(directory=HERE / "static"), name="static")
     if demo:
         app.include_router(make_demo(), prefix="/_demo")
@@ -163,7 +188,7 @@ def create_app(db, demo=False, port=None, start_worker=True):
         last_in = db.one("SELECT m.id, m.phone, TRIM(COALESCE(c.name,'') || ' ' || COALESCE(c.surname,'')) name "
                          "FROM messages m LEFT JOIN contacts c ON c.phone=m.phone "
                          "WHERE m.direction='in' ORDER BY m.id DESC LIMIT 1")
-        ctx.update(stuck=stuck, limited=worker.limited, last_in=last_in)
+        ctx.update(stuck=stuck, limited=worker.limited, last_in=last_in, update=app.state.update, version=__version__)
         ctx.update(demo=demo, msg=request.query_params.get("msg"), unread=unread, path=request.url.path,
                    configured=bool(db.get("address")), online=worker.online, phone_error=worker.error)
         return templates.TemplateResponse(request, template, ctx, status_code=status_code)

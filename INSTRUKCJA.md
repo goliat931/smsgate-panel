@@ -294,3 +294,15 @@ numery kończące się na 9 odpisują STOP, kończące się na 000 kończą bł�
 
 W folderze `%APPDATA%\SmsPanel` (wklej ten tekst w pasek adresu Eksploratora plików).
 Plik `panel.db` to wszystkie kontakty, rozmowy i ustawienia – skopiuj go, żeby zrobić kopię zapasową.
+
+## Aktualizacja panelu
+
+Gdy pojawi się nowa wersja, panel pokaże u góry niebieski pasek „Jest nowa wersja panelu”.
+
+1. Kliknij w pasku **Pobierz nowy plik SmsPanel.exe** i zapisz plik.
+2. Zamknij czarne okno „Panel SMS”.
+3. Podmień stary plik `SmsPanel.exe` na nowy i uruchom go jak zwykle.
+
+Kontakty, grupy, wiadomości i ustawienia leżą w osobnym folderze, więc zostaną. Panel sprawdza nowe wersje raz
+dziennie w internecie (pyta tylko stronę GitHub o numer najnowszej wersji, niczego nie wysyła). Numer Twojej wersji
+jest na dole strony **Ustawienia**.
