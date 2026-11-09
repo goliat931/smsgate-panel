@@ -31,6 +31,21 @@ def budget(db):
 MMS_NOTE = "📷 MMS (zdjęcie lub inny załącznik). Panel nie pokazuje zdjęć – zobacz je w telefonie."
 
 
+def fix_optouts(db):
+    """Jednorazowo: zdejmuje „nie wysyłaj” nadane przez starą regułę, która brała za rezygnację
+    każdy SMS ze słowem STOP (reklamy, kody weryfikacyjne). Ręczne oznaczenia zostają."""
+    if db.get("optout_fix"):
+        return
+    for b in db.q("SELECT phone FROM blocked"):
+        bodies = [m["body"] for m in db.q("SELECT body FROM messages WHERE direction='in' AND phone=?", b["phone"])]
+        # stara reguła = słowo kluczowe w dowolnie długim SMS-ie (max_words=None)
+        wrong = not b["phone"].startswith("+") or (
+            any(is_optout(x, None) for x in bodies) and not any(is_optout(x) for x in bodies))
+        if wrong:
+            db.x("DELETE FROM blocked WHERE phone=?", b["phone"])
+    db.set("optout_fix", "1")
+
+
 def store_incoming(db, item):
     """Zapisuje SMS lub MMS przychodzący z GET /inbox. Zwraca True, gdy to nowa wiadomość."""
     sender = item.get("sender") or ""
@@ -43,7 +58,7 @@ def store_incoming(db, item):
                phone, body, f"in:{item.get('id')}", to_utc_iso(item.get("createdAt")))
     if not cur.rowcount:
         return False
-    if is_optout(body):
+    if is_optout(body) and phone.startswith("+"):   # nadawca-napis (AUTHMSG, IKEA) i tak nie odbiera SMS-ów
         db.x("INSERT OR IGNORE INTO blocked(phone) VALUES(?)", phone)
     return True
 
@@ -59,6 +74,7 @@ class Worker(threading.Thread):
         self.wait_until = self.next_campaign = self.next_poll = 0.0
         # po awarii w trakcie wysyłki: spróbuj jeszcze raz; to samo id => telefon nie wyśle dwa razy (409)
         db.x("UPDATE messages SET status='queued' WHERE status='sending'")
+        fix_optouts(db)
 
     def run(self):
         while not self.stop.wait(1):

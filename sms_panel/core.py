@@ -56,10 +56,15 @@ def render(body, name="", phone="", note="", surname=""):
 OPTOUT = ("STOP", "NIE PISZ", "WYPISZ", "REZYGNUJE", "REZYGNACJA")
 
 
-def is_optout(text):
+def is_optout(text, max_words=8):
+    """Krótka odpowiedź z prośbą o rezygnację. Długie SMS-y (reklamy, kody z „To stop receiving…”,
+    „Wyślij STOP na…”) tylko wspominają o rezygnacji, więc ich nie liczymy."""
     t = unicodedata.normalize("NFKD", text or "")
     t = "".join(c for c in t if not unicodedata.combining(c)).upper()
-    t = " ".join(re.findall(r"\w+", t))
+    words = re.findall(r"\w+", t)
+    if max_words and len(words) > max_words:
+        return False
+    t = " ".join(words)
     return any(re.search(rf"\b{k}\b", t) for k in OPTOUT)
 
 

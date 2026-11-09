@@ -47,6 +47,9 @@ def test_sms_segments():
     ("STOP", True), ("stop", True), ("Stop!", True), ("  stop.  ", True),
     ("NIE PISZ", True), ("nie pisz do mnie więcej", True), ("Wypisz mnie", True),
     ("Rezygnuję", True), ("rezygnuje", True),
+    ("Proszę nie pisz do mnie więcej, dziękuję", True),
+    ("Your Link verification code is: 826567. To stop receiving these messages, visit support.link.com", False),
+    ("Hej! Upiecz dwie pieczenie na jednym ogniu. Rezygnacja z SMS: wyślij STOP na 8088", False),
     ("Dziękuję, będę!", False), ("Przystopuj trochę", False), ("Nie piszę się na to", False), ("", False),
 ])
 def test_optout(text, expected):

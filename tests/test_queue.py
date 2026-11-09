@@ -233,3 +233,17 @@ def test_mms_is_stored_as_a_note_and_old_phone_without_mms_still_works():
         return httpx.Response(200, json=[{"id": "s1", "type": "SMS", "sender": "600100200"}])
     gw = Gateway("http://t", "a", "b", httpx.Client(transport=httpx.MockTransport(handler)))
     assert [m["id"] for m in gw.inbox(datetime.now(timezone.utc))] == ["s1"]
+
+
+def test_old_wrong_optouts_are_removed_once_manual_ones_stay():
+    from sms_panel.worker import fix_optouts
+    db = DB(":memory:")
+    for phone, body in [("AUTHMSG", "STOP"), ("+48600000001", "Kod 123. To stop receiving these messages, visit x.com/a"),
+                        ("+48600000002", "STOP"), ("+48600000003", "Dziękuję")]:
+        store_incoming(db, {"id": phone, "sender": phone, "contentPreview": body, "createdAt": None})
+        db.x("INSERT OR IGNORE INTO blocked(phone) VALUES(?)", phone)   # tak oznaczała stara reguła / ręcznie
+    fix_optouts(db)
+    assert {r["phone"] for r in db.q("SELECT phone FROM blocked")} == {"+48600000002", "+48600000003"}
+    db.x("INSERT INTO blocked(phone) VALUES('AUTHMSG')")
+    fix_optouts(db)                                                       # drugi raz już nic nie zdejmuje
+    assert db.one("SELECT 1 FROM blocked WHERE phone='AUTHMSG'")
