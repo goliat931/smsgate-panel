@@ -294,6 +294,11 @@ numery kończące się na 9 odpisują STOP, kończące się na 000 kończą bł�
 
 W folderze `%APPDATA%\SmsPanel` (wklej ten tekst w pasek adresu Eksploratora plików).
 Plik `panel.db` to wszystkie kontakty, rozmowy i ustawienia – skopiuj go, żeby zrobić kopię zapasową.
+Ten folder jest osobno od pliku `SmsPanel.exe`, dlatego po aktualizacji panelu wszystko zostaje.
+
+Na dole strony **Ustawienia**, w ramce „Twoje dane”, panel pokazuje dokładną ścieżkę do tego folderu. Są tam też
+dwa przyciski: **Otwórz folder z danymi** i **Usuń wszystkie dane…**. Usuwanie najpierw pokazuje, co zniknie,
+i wymaga potwierdzenia. SMS-y w telefonie zostają.
 
 ## Aktualizacja panelu
 

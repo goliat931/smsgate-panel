@@ -2,6 +2,9 @@
 import csv
 import io
 import logging
+import os
+import subprocess
+import sys
 import threading
 import uuid
 from contextlib import asynccontextmanager
@@ -255,7 +258,7 @@ def create_app(db, demo=False, port=None, start_worker=True, check_updates=False
                     max_recipients=db.get("max_recipients", "50"), reserve=int(RESERVE * 100))
         if demo and not base["address"]:
             base.update(address="192.168.1.50:8080", login="demo", password="demo")
-        return page(request, "settings.html", **{**base, **ctx})
+        return page(request, "settings.html", **{**base, **ctx}, folder=folder, n=counts())
 
     def check(address, login, password):
         try:
@@ -297,6 +300,39 @@ def create_app(db, demo=False, port=None, start_worker=True, check_updates=False
                                                    "Co sprawdzić – jest na czerwonym pasku u góry."))
         return go("/kontakty" if not db.one("SELECT 1 FROM contacts") else "/ustawienia",
                   "Gotowe! Panel jest połączony z telefonem.")
+
+    # ---------- Dane panelu ----------
+
+    folder = Path(str(db.path)).resolve().parent if str(db.path) != ":memory:" else None
+
+    def counts():
+        n = lambda sql: db.one(sql)["n"]  # noqa: E731
+        return dict(contacts=n("SELECT COUNT(*) n FROM contacts"), groups=n("SELECT COUNT(*) n FROM grp"),
+                    messages=n("SELECT COUNT(*) n FROM messages"),
+                    queued=n("SELECT COUNT(*) n FROM messages WHERE status IN ('queued','sending')"))
+
+    @app.post("/dane/folder")
+    def data_folder():
+        """Otwiera folder z danymi w Eksploratorze (panel działa na tym samym komputerze)."""
+        if folder:
+            if sys.platform == "win32":
+                os.startfile(folder)
+            else:
+                subprocess.Popen(["open" if sys.platform == "darwin" else "xdg-open", str(folder)])
+        return go("/ustawienia#dane")
+
+    @app.get("/dane/usun")
+    def data_delete_page(request: Request):
+        return page(request, "data_delete.html", n=counts(), folder=folder)
+
+    @app.post("/dane/usun")
+    def data_delete(potwierdzam: str = Form("")):
+        if not potwierdzam:
+            return go("/dane/usun", "Nic nie usunięto: zaznacz „Rozumiem, że tego nie da się cofnąć”.")
+        db.wipe()
+        app.state.pending_import = None
+        worker.online, worker.error, worker.limited = None, "", False
+        return go("/ustawienia", "Usunięto wszystkie dane z panelu. Możesz połączyć go z telefonem od nowa.")
 
     @app.post("/demo/przyklady")
     def demo_examples():

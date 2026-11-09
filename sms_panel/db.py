@@ -62,6 +62,7 @@ class DB:
     # ponytail: jedno połączenie + globalna blokada; przy jednym użytkowniku wystarcza,
     # przy większym ruchu - połączenie na wątek.
     def __init__(self, path):
+        self.path = path
         self.con = sqlite3.connect(str(path), check_same_thread=False, isolation_level=None)
         self.con.row_factory = sqlite3.Row
         self.lock = threading.RLock()
@@ -75,6 +76,14 @@ class DB:
             self.con.execute("ALTER TABLE messages ADD COLUMN segments INTEGER NOT NULL DEFAULT 1")
         except sqlite3.OperationalError:
             pass
+
+    def wipe(self):
+        """Usuwa wszystko, także ustawienia, i fizycznie czyści plik (bez resztek w wolnym miejscu pliku)."""
+        with self.lock:
+            for table in ("messages", "campaigns", "contact_grp", "grp", "contacts", "blocked", "templates", "settings"):
+                self.con.execute(f"DELETE FROM {table}")
+            self.con.execute("VACUUM")
+            self.con.execute("PRAGMA wal_checkpoint(TRUNCATE)")
 
     def x(self, sql, *args):
         with self.lock:

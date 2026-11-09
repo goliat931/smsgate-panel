@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block main %}
+<p><a href="/ustawienia">← Ustawienia</a></p>
+<h1>Usuń wszystkie dane z panelu</h1>
+<div class="card narrow">
+  <p>Z panelu zostanie usunięte:</p>
+  <ul class="tight">
+    <li>kontakty: <b>{{ n.contacts }}</b> i grupy: <b>{{ n.groups }}</b>,</li>
+    <li>wiadomości (rozmowy i wysyłki): <b>{{ n.messages }}</b>{% if n.queued %}, w tym czekające w kolejce: <b>{{ n.queued }}</b> – nie zostaną wysłane{% endif %},</li>
+    <li>szablony, lista „nie wysyłaj” i dane połączenia z telefonem.</li>
+  </ul>
+  <p class="warn"><b>Tego nie da się cofnąć.</b> Jeśli chcesz coś zachować, najpierw zamknij panel i skopiuj folder
+    <code>{{ folder }}</code> w bezpieczne miejsce.</p>
+  <p>SMS-y w telefonie zostaną – panel usuwa tylko swoje dane na tym komputerze. Po usunięciu panel zacznie od
+    połączenia z telefonem, jak przy pierwszym uruchomieniu.</p>
+  <form method="post" action="/dane/usun">
+    <label class="check"><input type="checkbox" name="potwierdzam" value="1" required> Rozumiem, że tego nie da się cofnąć</label>
+    <p class="row">
+      <button class="btn danger">Usuń wszystkie dane</button>
+      <a class="btn" href="/ustawienia">Nie usuwaj, wróć</a>
+    </p>
+  </form>
+</div>
+{% endblock %}

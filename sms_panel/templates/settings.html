@@ -92,6 +92,22 @@
 </div>
 {% endif %}
 
+{% if configured or n.contacts or n.messages %}
+<div class="card" id="dane">
+  <h2>Twoje dane</h2>
+  <p>Kontakty ({{ n.contacts }}), grupy ({{ n.groups }}), wiadomości ({{ n.messages }}) i ustawienia są zapisane tylko na tym
+    komputerze, w folderze:</p>
+  <p><code>{{ folder or '(pamięć – dane znikną po zamknięciu)' }}</code></p>
+  <p>Ten folder jest osobno od pliku SmsPanel.exe. Dlatego po pobraniu nowej wersji panelu wszystko zostaje na miejscu.
+    Kopia zapasowa: zamknij panel i skopiuj cały folder, np. na pendrive.</p>
+  <p class="row">
+    {% if folder %}<button type="submit" form="f-folder" class="btn">Otwórz folder z danymi</button>{% endif %}
+    <a class="btn danger" href="/dane/usun">Usuń wszystkie dane…</a>
+  </p>
+  <form method="post" action="/dane/folder" id="f-folder"></form>
+</div>
+{% endif %}
+
 <p><small>Wersja panelu: {{ version }}. Panel raz dziennie sprawdza w internecie, czy jest nowsza wersja.</small></p>
 
 {% if demo and configured %}

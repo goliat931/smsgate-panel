@@ -278,3 +278,20 @@ def test_update_bar_only_for_newer_version():
     assert "Jest nowa wersja" not in c.get("/pomoc/limit").text
     app.state.update = "9.0.0"
     assert "Jest nowa wersja panelu (9.0.0" in c.get("/pomoc/limit").text
+
+
+def test_settings_show_data_folder_and_delete_needs_confirmation(tmp_path):
+    from sms_panel.db import DB
+    from sms_panel.web import create_app
+    db = DB(tmp_path / "panel.db")
+    c = TestClient(create_app(db, demo=True, start_worker=False))
+    c.post("/ustawienia", data={"address": "192.168.1.50:8080", "login": "demo", "password": "demo"})
+    c.post("/kontakty", data={"name": "Anna", "phone": "600100200"})
+    r = c.get("/ustawienia")
+    assert str(tmp_path) in r.text and "Usuń wszystkie dane" in r.text
+    assert "kontakty: <b>1</b>" in c.get("/dane/usun").text
+    c.post("/dane/usun")                                           # bez potwierdzenia nic nie znika
+    assert db.one("SELECT COUNT(*) n FROM contacts")["n"] == 1
+    r = c.post("/dane/usun", data={"potwierdzam": "1"}, follow_redirects=True)
+    assert "Usunięto wszystkie dane" in r.text and "Połączmy panel z telefonem" in r.text
+    assert db.one("SELECT COUNT(*) n FROM contacts")["n"] == 0 and not db.get("address")

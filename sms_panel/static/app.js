@@ -37,7 +37,7 @@ function incoming(b) {
     const n = new Notification('Panel SMS – nowa wiadomość', { body: 'Od: ' + b.dataset.od, tag: 'sms-' + id });
     n.onclick = () => { window.focus(); location.href = '/skrzynka?tel=' + encodeURIComponent(b.dataset.tel); };
   }
-  if (seen === null || id > +seen) mem('ostatnia', id);
+  if (seen === null || id !== +seen) mem('ostatnia', id);   // także w dół: po usunięciu danych numeracja rusza od nowa
 }
 incoming(document.body);
 const pow = $('pow-wlacz');
