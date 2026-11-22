@@ -212,3 +212,11 @@ Repozytorium publiczne, licencja MIT. Tag `v*` buduje Windows i macOS i publikuj
 (`SmsPanel.exe`, `SmsPanel`), CI sprawdza zgodność tagu z `sms_panel.__version__`. Panel (poza trybem demo) raz na dobę
 pyta `api.github.com/.../releases/latest` i pokazuje pasek z linkiem. Bez samodzielnej podmiany pliku: Windows nie
 pozwala nadpisać działającego exe, a plik nie jest podpisany. Błąd sieci = brak paska, panel działa dalej.
+
+## Uśpienie laptopa podczas wysyłki
+
+Wysyłka działa w wątku panelu na komputerze, nie w przeglądarce, więc samo wygaszenie ekranu jej nie zatrzymuje.
+Zatrzymuje ją uśpienie systemu, które w laptopie często następuje po wygaszeniu. `sms_panel/awake.py` woła na Windowsie
+`SetThreadExecutionState(ES_SYSTEM_REQUIRED)`, dopóki są wiadomości do wysłania (kolejka odpowiedzi lub działająca
+wysyłka grupowa). Ekran może wtedy zgasnąć, ale komputer nie zaśnie. Po opróżnieniu kolejki lub wstrzymaniu wysyłki
+system wraca do zwykłych ustawień. Zamknięcie pokrywy laptopa nadal usypia go zgodnie z ustawieniami Windows.
