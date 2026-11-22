@@ -6,6 +6,7 @@ import time
 from datetime import datetime, timedelta, timezone
 
 from .core import is_optout, normalize_phone
+from .awake import KeepAwake
 from .db import now_iso
 from .gateway import GatewayError, explain_error, to_utc_iso
 
@@ -77,11 +78,17 @@ class Worker(threading.Thread):
         fix_optouts(db)
 
     def run(self):
+        awake = KeepAwake()
         while not self.stop.wait(1):
             try:
                 self.tick(time.time())
+                # w kolejce coś czeka: komputer nie może zasnąć po wygaszeniu ekranu
+                awake.set(bool(self.db.one(
+                    "SELECT 1 FROM messages m LEFT JOIN campaigns c ON c.id=m.campaign_id "
+                    "WHERE m.status IN ('queued','sending') AND (c.id IS NULL OR c.status='running') LIMIT 1")))
             except Exception as e:  # wątek ma żyć; bez treści wiadomości w logu
                 log.warning("Błąd w tle: %s", type(e).__name__)
+        awake.set(False)
 
     def tick(self, now):
         gw = self.gateway_factory()
